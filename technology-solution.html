@@ -6,6 +6,10 @@
     <title>Technology Solution — Amerigroup International</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="Website%20Photos/Logos/Amerigroup%20Blue%E7%81%AB%20%E5%9C%B0%E7%90%83%E4%BB%AA%E6%8A%A0%E5%9B%BE.png">
+    <link rel="preconnect" href="https://assets.zyrosite.com">
+    <link rel="preconnect" href="https://images.pexels.com">
+    <link rel="preload" as="image" href="https://images.pexels.com/videos/3130284/free-video-3130284.jpg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=1920">
+    <link rel="preload" as="image" href="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,fit=crop,q=95/ALpeJ1OkE5HqbP9Z/ag-blue-mxB4r60XMEiBQ2EG.jpg">
 </head>
 <body>
 
@@ -13,7 +17,7 @@
     <div class="container">
         <div class="header-inner">
             <a href="index.html" class="site-logo" aria-label="Amerigroup International">
-                <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,fit=crop,q=95/ALpeJ1OkE5HqbP9Z/ag-blue-mxB4r60XMEiBQ2EG.jpg" alt="Amerigroup International" height="48">
+                <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,fit=crop,q=95/ALpeJ1OkE5HqbP9Z/ag-blue-mxB4r60XMEiBQ2EG.jpg" alt="Amerigroup International" height="48" fetchpriority="high" decoding="async">
             </a>
             <nav class="primary-nav" id="primary-nav" role="navigation" aria-label="Primary Menu">
                 <ul>
@@ -38,7 +42,7 @@
 <section class="page-hero">
     <div class="page-hero-video">
         <div class="page-hero-fallback" style="background-image:url('https://images.pexels.com/videos/3130284/free-video-3130284.jpg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=1920');"></div>
-        <video autoplay muted loop playsinline
+        <video autoplay muted loop playsinline preload="none"
                poster="https://images.pexels.com/videos/3130284/free-video-3130284.jpg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=1920">
             <source src="Videos/hero-technology.mp4" type="video/mp4">
         </video>
@@ -223,15 +227,15 @@
     </div>
 </footer>
 
-<script src="main.js"></script>
-<script src="favicon-spin.js"></script>
+<script src="main.js" defer></script>
+<script src="favicon-spin.js" defer></script>
 <script>
 (function () {
     const canvas = document.querySelector('.bubble-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const wrap = canvas.parentElement;
-    let bubbles = [];
+    let bubbles = [], rafId = null, spawnId = null, visible = false;
 
     function resize() {
         canvas.width = wrap.offsetWidth;
@@ -252,6 +256,7 @@
     }
 
     function draw() {
+        if (!visible) { rafId = null; return; }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         bubbles.forEach(b => {
             b.y -= b.speed;
@@ -269,17 +274,26 @@
             ctx.fill();
         });
         bubbles = bubbles.filter(b => b.y + b.r > 0);
-        requestAnimationFrame(draw);
+        rafId = requestAnimationFrame(draw);
     }
 
     resize();
-    window.addEventListener('resize', resize);
-    for (let i = 0; i < 18; i++) {
-        spawn();
-        bubbles[i].y = Math.random() * canvas.height;
-    }
-    setInterval(spawn, 600);
-    draw();
+    window.addEventListener('resize', resize, { passive: true });
+
+    const observer = new IntersectionObserver(entries => {
+        visible = entries[0].isIntersecting;
+        if (visible) {
+            if (!rafId) rafId = requestAnimationFrame(draw);
+            if (!spawnId) spawnId = setInterval(spawn, 600);
+        } else {
+            clearInterval(spawnId);
+            spawnId = null;
+        }
+    }, { threshold: 0.1 });
+
+    observer.observe(wrap);
+
+    for (let i = 0; i < 18; i++) { spawn(); bubbles[i].y = Math.random() * canvas.height; }
 })();
 </script>
 </body>
